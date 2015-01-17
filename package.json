@@ -1,0 +1,15 @@
+{
+  "name": "vapor-clock",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "Seth Fitzsimmons <seth@mojodna.net>",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^0.9.0",
+    "exquisite": "^1.0.0",
+    "holdtime": "^0.1.1",
+    "raven": "^0.7.2",
+    "require-env": "0.0.4"
+  }
+}
