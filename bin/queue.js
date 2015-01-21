@@ -9,33 +9,29 @@ var queue = exquisite({
 }).queue;
 
 queue.queueTask({
-  name: "test",
+  name: "reproject NED to 3857",
+  input: "/vsizip/vsicurl/http://ned.stamen.com.s3.amazonaws.com/13arcsec/n25w081.zip/n25w081/floatn25w081_13.flt",
+  output: "s3://ned.stamen.com/13arcsec/3857/n25w081.tiff",
   operations: [
     {
-      type: "warp",
-      args: [
-        "-q",
-        "-t_srs", "EPSG:3857",
-        "-wo", "NUM_THREADS=ALL_CPUS",
-        "-tr", 10, 10,
-        "-tap",
-        "-multi",
-        "-co", "tiled=yes",
-        "-co", "compress=lzw",
-        "-co", "predictor=2",
-        "-r", "lanczos",
-        "/vsizip/data/n38w122.zip/n38w122/floatn38w122_13.flt",
-        "data/n38w122.tiff"
-      ]
-    },
-    {
-      type: "copy",
-      args: [
-        "data/n38w122.tiff",
-        "s3://data.stamen.com/tmp/"
-      ]
+      type: "reproject",
+      options: {
+        targetSRS: "EPSG:3857"
+      }
     }
   ]
-}, {
-  maxAttempts: 10
+});
+
+queue.queueTask({
+  name: "reproject SRTM to 3857",
+  input: "/vsizip/vsicurl/http://data.stamen.com.s3.amazonaws.com/srtm/source/srtm_01_07.zip/srtm_01_07.tif",
+  output: "s3://data.stamen.com/srtm/3857/srtm_01_07.tiff",
+  operations: [
+    {
+      type: "reproject",
+      options: {
+        targetSRS: "EPSG:3857"
+      }
+    }
+  ]
 });

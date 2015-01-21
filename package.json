@@ -10,6 +10,8 @@
     "exquisite": "^1.1.2",
     "holdtime": "^0.1.1",
     "raven": "^0.7.2",
-    "require-env": "0.0.4"
+    "require-env": "0.0.4",
+    "s3-streaming-upload": "^0.1.16",
+    "tmp": "0.0.24"
   }
 }
