@@ -5,7 +5,7 @@ var env = require("require-env"),
     exquisite = require("exquisite");
 
 var queue = exquisite({
-  name: env.require("QUEUE_NAME")
+  name: env.require("SQS_QUEUE_NAME")
 }).queue;
 
 queue.queueTask({

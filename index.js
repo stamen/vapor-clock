@@ -12,7 +12,7 @@ var async = require("async"),
 
 var worker = require("./lib/worker");
 
-var QUEUE_NAME = env.require("QUEUE_NAME");
+var QUEUE_NAME = env.require("SQS_QUEUE_NAME");
 
 var sentry = new raven.Client(),
     workers = [];
