@@ -6,11 +6,16 @@
 var os = require("os");
 
 var async = require("async"),
+    env = require("require-env"),
+    exquisite = require("exquisite"),
     raven = require("raven");
 
 var worker = require("./lib/worker");
 
-var workers = [];
+var QUEUE_NAME = env.require("QUEUE_NAME");
+
+var sentry = new raven.Client(),
+    workers = [];
 
 if (process.env.SENTRY_DSN) {
   raven.patchGlobal(function(logged, err) {
@@ -23,7 +28,22 @@ if (process.env.SENTRY_DSN) {
 // Start <nprocs> workers
 
 async.times(os.cpus().length, function(n, callback) {
-  workers.push(worker(n));
+  workers.push(exquisite({
+    name: QUEUE_NAME
+  }, function(task, cb) {
+    return worker(n, task, function(err) {
+      if (err) {
+        console.warn(err.message);
+        sentry.captureError(err, {
+          extra: {
+            task: task
+          }
+        });
+      }
+
+      return cb.apply(null, arguments);
+    });
+  }));
 
   return callback();
 });
