@@ -7,7 +7,7 @@
   "license": "ISC",
   "dependencies": {
     "async": "^0.9.0",
-    "exquisite": "^1.1.1",
+    "exquisite": "^1.1.2",
     "holdtime": "^0.1.1",
     "raven": "^0.7.2",
     "require-env": "0.0.4"
