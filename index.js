@@ -17,6 +17,8 @@ var QUEUE_NAME = env.require("SQS_QUEUE_NAME");
 var sentry = new raven.Client(),
     workers = [];
 
+process.setMaxListeners(os.cpus().length * 2);
+
 if (process.env.SENTRY_DSN) {
   raven.patchGlobal(function(logged, err) {
     console.log("Uncaught error. Reporting to Sentry and exiting.");
