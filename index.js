@@ -27,9 +27,9 @@ if (process.env.SENTRY_DSN) {
   });
 }
 
-// Start <nprocs> workers
+// Start 2 * <nprocs> workers
 
-async.times(os.cpus().length, function(n, callback) {
+async.times(2 * os.cpus().length, function(n, callback) {
   workers.push(exquisite({
     name: QUEUE_NAME
   }, function(task, cb) {
