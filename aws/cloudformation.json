@@ -1,0 +1,228 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Cloud Atlas workers",
+  "Parameters": {
+    "QueueName": {
+      "Description": "SQS queue name",
+      "Type": "String"
+    },
+    "WorkerCount": {
+      "Description": "Number of workers",
+      "Type": "Number"
+    },
+    "SentryDSN": {
+      "Description": "Sentry DSN",
+      "Type": "String",
+      "NoEcho": true
+    }
+  },
+  "Resources": {
+    "AutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Timeout": "PT15M",
+          "Count": { "Ref": "WorkerCount" }
+        }
+      },
+      "UpdatePolicy": {
+        "AutoScalingScheduledAction": {
+          "IgnoreUnmodifiedGroupSizeProperties": "true"
+        },
+        "AutoScalingRollingUpdate": {
+          "MaxBatchSize": "1",
+          "MinInstancesInService": "1",
+          "PauseTime": "PT15M",
+          "WaitOnResourceSignals": "true"
+        }
+      },
+      "Properties": {
+        "AvailabilityZones": [
+          "us-east-1b",
+          "us-east-1c",
+          "us-east-1d",
+          "us-east-1e"
+        ],
+        "Cooldown": "300",
+        "DesiredCapacity": { "Ref": "WorkerCount" },
+        "MaxSize": "10",
+        "MinSize": "1",
+        "HealthCheckGracePeriod": "300",
+        "HealthCheckType": "EC2",
+        "VPCZoneIdentifier": [
+          "subnet-419c4018",
+          "subnet-c49426b3",
+          "subnet-5b01fe70",
+          "subnet-c3b42cf9"
+        ],
+        "NotificationConfiguration": {
+          "TopicARN": "arn:aws:sns:us-east-1:207818873931:cloud-atlas",
+          "NotificationTypes": [
+            "autoscaling:EC2_INSTANCE_LAUNCH",
+            "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+            "autoscaling:EC2_INSTANCE_TERMINATE",
+            "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+          ]
+        },
+        "LaunchConfigurationName": {
+          "Ref": "LaunchConfiguration"
+        },
+        "Tags": [
+          {
+            "Key": "client",
+            "Value": "cloudatlas",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Name",
+            "Value": "vapor-clock worker",
+            "PropagateAtLaunch": true
+          }
+        ]
+      }
+    },
+    "QueueRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version" : "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "RolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "root",
+        "PolicyDocument": {
+          "Version" : "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "VaporClockQueues",
+              "Effect": "Allow",
+              "Action": [
+                "sqs:*"
+              ],
+              "Resource": [
+                "arn:aws:sqs:us-east-1:207818873931:cloud_atlas",
+                "arn:aws:sqs:us-east-1:207818873931:cloud_atlas_failed"
+              ]
+            },
+            {
+              "Sid": "SRTM",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject",
+                "s3:GetObjectAcl",
+                "s3:ListBucket",
+                "s3:PutObject",
+                "s3:PutObjectAcl"
+              ],
+              "Resource": [
+                "arn:aws:s3:::data.stamen.com/srtm/*"
+              ]
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "QueueRole"
+          }
+        ]
+      }
+    },
+    "QueueInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "QueueRole"
+          }
+        ]
+      }
+    },
+    "LaunchConfiguration": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": "ami-f8942f90",
+        "InstanceType": "g2.2xlarge",
+        "KeyName": "stamen-keypair",
+        "InstanceMonitoring": "true",
+        "IamInstanceProfile": {
+          "Ref": "QueueInstanceProfile"
+        },
+        "SecurityGroups": [
+          "sg-a3e604c7"
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#cloud-config\n",
+                "\n",
+                "repo_update: true\n",
+                "repo_upgrade: all\n",
+                "\n",
+                "packages:\n",
+                " - git\n",
+                "\n",
+                "write_files:\n",
+                " -  content: |\n",
+                "      export LD_LIBRARY_PATH=/opt/local/lib:$LD_LIBRARY_PATH\n",
+                "      export PATH=/opt/local/bin:$PATH\n",
+                "      export GDAL_DATA=/opt/local/share/gdal\n",
+                "      export SQS_QUEUE_NAME=",
+                {
+                  "Ref": "QueueName"
+                },
+                "\n",
+                "      export SENTRY_DSN=",
+                {
+                  "Ref": "SentryDSN"
+                },
+                "\n",
+                "    path: /etc/profile.d/local.sh\n",
+                " -  content: |\n",
+                "      KERNEL==\"nvidia_uvm\", RUN+=\"/bin/sh -c '/bin/mknod -m 666 /dev/nvidia-uvm c $(grep nvidia-uvm /proc/devices | cut -d \\  -f 1) 0'\"\n",
+                "    path: /etc/udev/rules.d/99-nvidia.rules\n",
+                "\n",
+                "runcmd:\n",
+                " - modprobe nvidia_uvm\n",
+                " - /opt/aws/bin/cfn-signal --stack ",
+                {
+                  "Ref": "AWS::StackName"
+                },
+                " --resource AutoScalingGroup --region ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "\n",
+                " - yum-config-manager --enable epel\n",
+                " - yum -y update\n",
+                " - yum install -y proj-devel\n",
+                " - mkdir -p /opt/local\n",
+                " - curl http://data.stamen.com.s3.amazonaws.com/cloudatlas/gdal-1.11.1-opencl-amazon-2014.09.tgz | tar zxf - -C /opt/local/\n",
+                " - curl http://nodejs.org/dist/v0.10.35/node-v0.10.35-linux-x64.tar.gz | tar zxf - --strip-components=1 -C /opt/local\n"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  }
+}
