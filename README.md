@@ -29,6 +29,10 @@ supported, and data is written with the `public-read` ACL).
 
 ## Operations
 
+### hillshade
+
+Generates hillshades using `gdaldem`.
+
 ### reproject
 
 Reprojects GDAL-readable rasters to `targetSRS`.
