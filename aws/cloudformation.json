@@ -215,7 +215,7 @@
         "SecurityGroups": [
           "sg-a3e604c7"
         ],
-        "SpotPrice": "0.0641",
+        "SpotPrice": "0.065",
         "UserData": {
           "Fn::Base64": {
             "Fn::Join": [
