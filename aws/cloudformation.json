@@ -248,6 +248,18 @@
                 " -  content: |\n",
                 "      KERNEL==\"nvidia_uvm\", RUN+=\"/bin/sh -c '/bin/mknod -m 666 /dev/nvidia-uvm c $(grep nvidia-uvm /proc/devices | cut -d \\  -f 1) 0'\"\n",
                 "    path: /etc/udev/rules.d/99-nvidia.rules\n",
+                " -  content: |\n",
+                "      start on stopped rc RUNLEVEL=5\n",
+                "      stop on starting rc RUNLEVEL=[!5]\n",
+                "\n",
+                "      respawn\n",
+                "      respawn limit 10 120\n",
+                "      script\n",
+                "        source /etc/profile.d/local.sh\n",
+                "        cd /app\n",
+                "        exec su ec2-user -c '/opt/local/bin/node server.js'\n",
+                "      end script\n",
+                "    path: /etc/init/vapor-clock.conf\n",
                 "\n",
                 "runcmd:\n",
                 " - modprobe nvidia_uvm\n",
@@ -265,7 +277,10 @@
                 " - yum install -y proj-devel\n",
                 " - mkdir -p /opt/local\n",
                 " - curl http://data.stamen.com.s3.amazonaws.com/cloudatlas/gdal-1.11.1-opencl-amazon-2014.09.tgz | tar zxf - -C /opt/local/\n",
-                " - curl http://nodejs.org/dist/v0.10.35/node-v0.10.35-linux-x64.tar.gz | tar zxf - --strip-components=1 -C /opt/local\n"
+                " - curl http://nodejs.org/dist/v0.10.35/node-v0.10.35-linux-x64.tar.gz | tar zxf - --strip-components=1 -C /opt/local\n",
+                " - git clone https://github.com/stamen/vapor-clock.git /app\n",
+                " - cd /app && /opt/local/bin/npm install && chown -R ec2-user:ec2-user /app\n",
+                " - start vapor-clock\n"
               ]
             ]
           }
