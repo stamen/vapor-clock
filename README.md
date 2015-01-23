@@ -51,3 +51,19 @@ Reprojects GDAL-readable rasters to `targetSRS`.
 The AWS credentials must have sufficient access to create / modify / read
 / write SQS queues named `SQS_QUEUE_NAME` and `${SQS_QUEUE_NAME}_failed`. You
 should also grant access to any S3 buckets you wish to write to.
+
+## Miscellany
+
+To create a VRT for S3-hosted SRTM data, do something like this:
+
+```bash
+(for f in $(< srtm.list); do echo /vsicurl/http://data.stamen.com.s3.amazonaws.com/srtm/3857/${f%%.zip}.tiff; done) | xargs gdalbuildvrt srtm.vrt
+```
+
+You can then refer to an S3-hosted version of that VRT:
+
+```bash
+gdalwarp -te -124.7494 45.5437 -116.9161 49.0049 \
+  /vsicurl/http://data.stamen.com.s3.amazonaws.com/srtm/SRTM-4326.vrt \
+  SRTM-washington.tiff
+```
