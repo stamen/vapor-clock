@@ -6,8 +6,8 @@
       "Description": "SQS queue name",
       "Type": "String"
     },
-    "WorkerCount": {
-      "Description": "Number of workers",
+    "MaxWorkerCount": {
+      "Description": "Maximum number of workers",
       "Type": "Number"
     },
     "SentryDSN": {
@@ -22,18 +22,7 @@
       "CreationPolicy": {
         "ResourceSignal": {
           "Timeout": "PT15M",
-          "Count": { "Ref": "WorkerCount" }
-        }
-      },
-      "UpdatePolicy": {
-        "AutoScalingScheduledAction": {
-          "IgnoreUnmodifiedGroupSizeProperties": "true"
-        },
-        "AutoScalingRollingUpdate": {
-          "MaxBatchSize": "1",
-          "MinInstancesInService": "1",
-          "PauseTime": "PT15M",
-          "WaitOnResourceSignals": "true"
+          "Count": "0"
         }
       },
       "Properties": {
@@ -44,9 +33,9 @@
           "us-east-1e"
         ],
         "Cooldown": "300",
-        "DesiredCapacity": { "Ref": "WorkerCount" },
-        "MaxSize": "10",
-        "MinSize": "1",
+        "DesiredCapacity": "0",
+        "MaxSize": { "Ref": "MaxWorkerCount" },
+        "MinSize": "0",
         "HealthCheckGracePeriod": "300",
         "HealthCheckType": "EC2",
         "VPCZoneIdentifier": [
@@ -79,6 +68,64 @@
             "PropagateAtLaunch": true
           }
         ]
+      }
+    },
+    "ScaleUpPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": { "Ref" : "AutoScalingGroup" },
+        "Cooldown": "300",
+        "ScalingAdjustment": "1"
+      }
+    },
+    "ScaleDownPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": { "Ref" : "AutoScalingGroup" },
+        "Cooldown": "60",
+        "ScalingAdjustment": "-1"
+      }
+    },
+    "QueueNotEmpty": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Scale-up if queue has >= 1 item",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Statistic": "Average",
+        "Period": "300",
+        "EvaluationPeriods": "1",
+        "Threshold": "1",
+        "AlarmActions": [ { "Ref": "ScaleUpPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": { "Ref": "QueueName" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold"
+      }
+    },
+    "QueueEmpty": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Scale-down if queue is empty for 10min",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Statistic": "Average",
+        "Period": "300",
+        "EvaluationPeriods": "2",
+        "Threshold": "1",
+        "AlarmActions": [ { "Ref": "ScaleDownPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": { "Ref": "QueueName" }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
       }
     },
     "QueueRole": {
@@ -168,7 +215,7 @@
         "SecurityGroups": [
           "sg-a3e604c7"
         ],
-        "SpotPrice": "0.64",
+        "SpotPrice": "0.064",
         "UserData": {
           "Fn::Base64": {
             "Fn::Join": [
