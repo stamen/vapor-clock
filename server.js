@@ -29,7 +29,7 @@ if (process.env.SENTRY_DSN) {
 
 // Start 2 * <nprocs> workers
 
-async.times(2 * os.cpus().length, function(n, callback) {
+async.times(os.cpus().length / 2, function(n, callback) {
   workers.push(exquisite({
     name: QUEUE_NAME
   }, function(task, cb) {
