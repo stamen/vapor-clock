@@ -17,7 +17,9 @@ var QUEUE_NAME = env.require("SQS_QUEUE_NAME");
 var sentry = new raven.Client(),
     workers = [];
 
-process.setMaxListeners(os.cpus().length * 2);
+// TODO set this to (<task count> * 2) + 2 once shell.js learns how to clean
+// up after itself
+process.setMaxListeners(0);
 
 if (process.env.SENTRY_DSN) {
   raven.patchGlobal(function(logged, err) {
