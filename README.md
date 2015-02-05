@@ -71,3 +71,7 @@ gdalwarp -te -124.7494 45.5437 -116.9161 49.0049 \
   /vsicurl/http://data.stamen.com.s3.amazonaws.com/srtm/SRTM-4326.vrt \
   SRTM-washington.tiff
 ```
+
+```bash
+docker run -p 80:80 -v $(pwd)/conf:/etc/nginx/sites-enabled dockerfile/nginx
+```
