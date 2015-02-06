@@ -17,12 +17,13 @@ var queue = exquisite({
   name: env.require("SQS_QUEUE_NAME")
 }).queue;
 
-var zoom = 6;
+var zoom = 8;
 
 var pixelWidth = Math.pow(2, zoom + 8),
     pixelHeight = pixelWidth,
     // 2 * pi * earth radius * cos(lat)
     circumference = 2 * Math.PI * SEMI_MAJOR_AXIS * Math.cos(0),
+    // extents
     minX = (circumference / 2) * -1,
     minY = minX,
     maxX = (circumference / 2),
@@ -38,11 +39,14 @@ console.log("targetResolution:", targetResolution);
 var width = CELL_WIDTH * targetResolution,
     height = width;
 
-async.times(pixelHeight / CELL_WIDTH, function(yi, callback) {
+async.times(pixelHeight / CELL_HEIGHT, function(yi, callback) {
   var y1 = Math.max(minY, (yi * height) - (circumference / 2) - (CELL_PADDING * targetResolution)),
       y2 = Math.min(maxY, ((yi + 1) * height) - (circumference / 2) + (CELL_PADDING * targetResolution));
 
-  return async.times(pixelWidth / CELL_HEIGHT, function(xi, done) {
+  // flip y to move the origin to the top-left (XYZ)
+  yi = pixelHeight / CELL_HEIGHT - yi - 1;
+
+  return async.times(pixelWidth / CELL_WIDTH, function(xi, done) {
     var x1 = Math.max(minX, (xi * width) - (circumference / 2) - (CELL_PADDING * targetResolution)),
         x2 = Math.min(maxX, ((xi + 1) * width) - (circumference / 2) + (CELL_PADDING * targetResolution));
 
