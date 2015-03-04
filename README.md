@@ -42,6 +42,15 @@ Reprojects GDAL-readable rasters to `targetSRS`.
 * `targetSRS` - Target SRS. Equivalent to `gdalwarp`'s `-t_srs` option.
   Required.
 
+### resample
+
+Resamples rasters in 3857 to a given `targetExtent` and `targetResolution`.
+
+#### Options
+
+* `targetExtent` - Target Extent, an array of four values in the EPSG:3857 projection: xmin ymin xmax ymax. Equivalent to `gdalwarp`'s `-te` option. Required.
+* `targetResolution` - Target Resolution, an array of two values in EPSG:3857 units: xres yres. Equivalent to `gdalwarp`'s `-tr` option. Required.
+
 ## Environment Variables
 
 * `AWS_ACCESS_KEY_ID` - Optional if instance roles are used.
