@@ -17,7 +17,7 @@ var queue = exquisite({
   name: env.require("SQS_QUEUE_NAME")
 }).queue;
 
-var zoom = 8;
+var zoom = 7;
 
 var pixelWidth = Math.pow(2, zoom + 8),
     pixelHeight = pixelWidth,
@@ -29,7 +29,6 @@ var pixelWidth = Math.pow(2, zoom + 8),
     maxX = (circumference / 2),
     maxY = maxX,
     // circumference / pixel width(zoom)
-    targetSRS = "EPSG:3857",
     targetResolution = circumference / pixelWidth;
 
 console.log("pixelWidth:", pixelWidth);
@@ -51,18 +50,14 @@ async.times(pixelHeight / CELL_HEIGHT, function(yi, callback) {
     var x1 = Math.max(minX, (xi * width) - (circumference / 2) - (CELL_PADDING * targetResolution)),
         x2 = Math.min(maxX, ((xi + 1) * width) - (circumference / 2) + (CELL_PADDING * targetResolution));
 
+    console.log("hillshade", zoom, xi, yi);
     return queue.queueTask({
-      name: util.format("resample SRTM to %s zoom %d (%d/%d)", targetSRS, zoom, xi, yi),
-      input: "/vsicurl/http://data.stamen.com.s3.amazonaws.com/srtm/SRTM-4326.vrt",
-      output: util.format("s3://data.stamen.com/srtm/z%d/%d/%d.tiff", zoom, xi, yi),
+      name: util.format("hillshade SRTM in 2163 at zoom %d (%d/%d)", zoom, xi, yi),
+      input: util.format("/vsicurl/http://data.stamen.com.s3.amazonaws.com/srtm/2163/z%d/%d/%d.tiff", zoom, xi, yi),
+      output: util.format("s3://data.stamen.com/srtm/2163hillshade/z%d/%d/%d.tiff", zoom, xi, yi),
       operations: [
         {
-          type: "resample",
-          options: {
-            targetSRS: targetSRS,
-            targetExtent: [x1, y1, x2, y2],
-            targetResolution: [targetResolution, targetResolution]
-          }
+          type: "hillshade"
         }
       ]
     }, {

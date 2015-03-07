@@ -17,7 +17,7 @@ var queue = exquisite({
   name: env.require("SQS_QUEUE_NAME")
 }).queue;
 
-var zoom = 8;
+var zoom = 6;
 
 var pixelWidth = Math.pow(2, zoom + 8),
     pixelHeight = pixelWidth,
@@ -29,7 +29,7 @@ var pixelWidth = Math.pow(2, zoom + 8),
     maxX = (circumference / 2),
     maxY = maxX,
     // circumference / pixel width(zoom)
-    targetSRS = "EPSG:3857",
+    targetSRS = "EPSG:2163",
     targetResolution = circumference / pixelWidth;
 
 console.log("pixelWidth:", pixelWidth);
@@ -52,9 +52,9 @@ async.times(pixelHeight / CELL_HEIGHT, function(yi, callback) {
         x2 = Math.min(maxX, ((xi + 1) * width) - (circumference / 2) + (CELL_PADDING * targetResolution));
 
     return queue.queueTask({
-      name: util.format("resample SRTM to %s zoom %d (%d/%d)", targetSRS, zoom, xi, yi),
+      name: util.format("reproject SRTM to %s at zoom %d (%d/%d)", targetSRS, zoom, xi, yi),
       input: "/vsicurl/http://data.stamen.com.s3.amazonaws.com/srtm/SRTM-4326.vrt",
-      output: util.format("s3://data.stamen.com/srtm/z%d/%d/%d.tiff", zoom, xi, yi),
+      output: util.format("s3://data.stamen.com/srtm/2163/z%d/%d/%d.tiff", zoom, xi, yi),
       operations: [
         {
           type: "resample",
