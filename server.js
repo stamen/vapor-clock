@@ -8,7 +8,8 @@ var os = require("os");
 var async = require("async"),
     env = require("require-env"),
     exquisite = require("exquisite"),
-    raven = require("raven");
+    raven = require("raven"),
+    upload = require("s3Upload");
 
 var worker = require("./lib/worker");
 
@@ -29,13 +30,13 @@ if (process.env.SENTRY_DSN) {
   });
 }
 
-// Start 2 * <nprocs> workers
+// Start <nprocs> / 2 workers
 
 async.times(os.cpus().length / 2, function(n, callback) {
   workers.push(exquisite({
     name: QUEUE_NAME
   }, function(task, cb) {
-    return worker(n, task, function(err) {
+    return worker(n, task, upload, function(err) {
       if (err) {
         console.warn(err.message);
         sentry.captureError(err, {
