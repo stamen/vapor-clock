@@ -1,1 +1,8 @@
 .env
+node_modules
+
+# Emacs files
+\#*#
+*~
+.#*
+
